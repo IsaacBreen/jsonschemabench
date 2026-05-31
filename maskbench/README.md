@@ -44,7 +44,9 @@ By isolating mask computation, this benchmark assesses its standalone performanc
 3. **[XGrammar](https://github.com/mlc-ai/xgrammar)** in default configuration.
 4. **"XGrammar.cpp"**: XGrammar with the llama.cpp script above.
 5. **[Outlines Core](https://github.com/dottxt-ai/outlines-core)**
-6. **glrmask2**: local integration via the PyO3 `_glrmask` extension from a separate `glrmask2` checkout.
+6. **glrmask2**: local integration via the PyO3 `_glrmask` extension from a separate `glrmask2` checkout, with `glrmask2-mt` available as an opt-in multithreaded compile variant.
+
+XGrammar and glrmask2 also have opt-in multithreaded compile variants. LLGuidance, Outlines Core, and llama.cpp do not expose a per-schema compile thread control in this MaskBench integration.
 
 ## Test Environment
 
@@ -55,7 +57,8 @@ By isolating mask computation, this benchmark assesses its standalone performanc
   - Threads: 40-thread limit.
 
 - Engines were executed single-threaded to emulate large batch scenarios (where batch size is larger than the number of available cores).
-- XGrammar was set to only use a single thread per sequence, other always do that.
+- glrmask2's default JSB run is forced single-threaded; `--glrmask2-mt` records the multithreaded compile variant separately.
+- XGrammar was set to only use a single thread per sequence; `--xgr-mt` records the multithreaded compile variant separately.
 - ~~Outlines normally uses several threads per sequence, so it was run with 90 parallel threads, so it doesn't get more CPU time than the other engines.~~
 
 Approximate times to run the benchmark with 40-way parallelism:
@@ -162,6 +165,12 @@ Note that an engine that only supports "easy" schemas may have artificially good
   Results are saved in `tmp/out--xgr-compliant`.
   See `./scripts/run_maskbench.py --help` for more options, in particular resource limits.
 
+  To run XGrammar as a separate multithreaded compile variant:
+
+  `./scripts/run_maskbench.py --xgr --xgr-mt --xgr-compile-threads 4 data/`
+
+  The same `--xgr-mt` flag can be combined with `--xgr-compliant` or `--xgr-cpp`.
+
 - **Run glrmask2**: this integration expects `_glrmask` to be installed into the active Python environment, typically from a sibling checkout on the `glrmask-main` branch such as `../glrmask2-jsonschemabench-integration` via:
 
   `maturin develop --manifest-path ../glrmask2-jsonschemabench-integration/python/Cargo.toml`
@@ -171,6 +180,10 @@ Note that an engine that only supports "easy" schemas may have artificially good
   Then run:
 
   `./scripts/run_maskbench.py --glrmask2 data/`
+
+  To run glrmask2 as a separate multithreaded compile variant:
+
+  `./scripts/run_maskbench.py --glrmask2-mt --glrmask2-compile-threads 4 data/`
   
 - **Analyze Results**: Generate tables and plots with  
   `./scripts/maskbench_results.py`.

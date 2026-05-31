@@ -271,10 +271,15 @@ def format_time(time_us: int):
 plot_colors = {
     "llg": "#000000",
     "xgr": 9,
+    "xgr-mt": 8,
     "llamacpp": 1,
     "xgr-cpp": 0,
+    "xgr-cpp-mt": 6,
+    "xgr-compliant": 5,
+    "xgr-compliant-mt": 7,
     "outlines": 2,
     "glrmask2": 3,
+    "glrmask2-mt": 4,
 }
 
 

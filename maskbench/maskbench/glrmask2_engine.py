@@ -85,8 +85,12 @@ def _import_glrmask():
 
 
 class GlrMask2Engine(Engine):
-    def __init__(self):
+    def __init__(
+        self, *, multithreaded: bool = False, compile_threads: int | None = None
+    ):
         super().__init__()
+        self.multithreaded = multithreaded
+        self.compile_threads = compile_threads
         self.glrmask = None
         self.vocab = None
         self.constraint = None
@@ -94,10 +98,14 @@ class GlrMask2Engine(Engine):
         self.mask_data = None
 
     def get_id(self):
-        return "glrmask2"
+        return "glrmask2-mt" if self.multithreaded else "glrmask2"
 
     def get_name(self):
-        return "glrmask2"
+        if not self.multithreaded:
+            return "glrmask2"
+        if self.compile_threads is None:
+            return "glrmask2-mt"
+        return f"glrmask2-mt-{self.compile_threads}"
 
     def get_module(self):
         return "_glrmask"
@@ -109,6 +117,14 @@ class GlrMask2Engine(Engine):
         return getattr(self.glrmask, "__version__", "dev")
 
     def init(self):
+        if self.multithreaded:
+            if self.compile_threads is not None:
+                os.environ["GLRMASK_COMPILE_THREADS"] = str(self.compile_threads)
+                os.environ["RAYON_NUM_THREADS"] = str(self.compile_threads)
+        else:
+            os.environ["GLRMASK_COMPILE_THREADS"] = "1"
+            os.environ["RAYON_NUM_THREADS"] = "1"
+
         self.glrmask = _import_glrmask()
 
         id_to_token_bytes: dict[int, bytes] = {}
