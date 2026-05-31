@@ -44,6 +44,7 @@ By isolating mask computation, this benchmark assesses its standalone performanc
 3. **[XGrammar](https://github.com/mlc-ai/xgrammar)** in default configuration.
 4. **"XGrammar.cpp"**: XGrammar with the llama.cpp script above.
 5. **[Outlines Core](https://github.com/dottxt-ai/outlines-core)**
+6. **glrmask2**: local integration via the PyO3 `_glrmask` extension from a separate `glrmask2` checkout.
 
 ## Test Environment
 
@@ -160,6 +161,16 @@ Note that an engine that only supports "easy" schemas may have artificially good
   `./scripts/run_maskbench.py --xgr-compliant data/`  
   Results are saved in `tmp/out--xgr-compliant`.
   See `./scripts/run_maskbench.py --help` for more options, in particular resource limits.
+
+- **Run glrmask2**: this integration expects `_glrmask` to be installed into the active Python environment, typically from a sibling checkout on the `glrmask-main` branch such as `../glrmask2-jsonschemabench-integration` via:
+
+  `maturin develop --manifest-path ../glrmask2-jsonschemabench-integration/python/Cargo.toml`
+
+  If the glrmask2 checkout is elsewhere, set `GLRMASK2_CHECKOUT=/path/to/glrmask2` so result metadata can record the checkout revision.
+
+  Then run:
+
+  `./scripts/run_maskbench.py --glrmask2 data/`
   
 - **Analyze Results**: Generate tables and plots with  
   `./scripts/maskbench_results.py`.

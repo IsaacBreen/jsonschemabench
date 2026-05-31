@@ -142,6 +142,7 @@ def setup_argparse():
         description="Run mask computation.",
         formatter_class=CustomHelpFormatter,
     )
+    parser.add_argument("--glrmask2", action="store_true", help="Enable glrmask2")
     parser.add_argument("--xgr", action="store_true", help="Enable XGrammar")
     parser.add_argument(
         "--xgr-cpp",
@@ -193,6 +194,12 @@ def setup_argparse():
 
 def get_engine(args) -> Engine:
     engine: Engine | None = None
+
+    if args.glrmask2:
+        from .glrmask2_engine import GlrMask2Engine
+
+        assert not engine, "Multiple engines specified"
+        engine = GlrMask2Engine()
 
     if args.xgr or args.xgr_compliant or args.xgr_cpp:
         from .xgr_engine import XgrEngine

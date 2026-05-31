@@ -134,16 +134,12 @@ def main(folder: str):
                     else:
                         stats.masks_us_over_10ms += us
                         stats.num_masks_over_10ms += 1
-    stats.avg_masks_under_10ms = stats.masks_us_under_10ms // stats.num_masks_under_10ms
-    stats.avg_masks_over_10ms = stats.masks_us_over_10ms // stats.num_masks_over_10ms
-    stats.avg_mask_us = stats.masks_us // stats.num_tokens
-    print(json.dumps(stats.__dict__, indent=2))
-    with open(folder + "/stats.txt", "w") as f:
-        f.write(json.dumps(stats.__dict__, indent=2))
-    with open(folder + "/ttfm_us.csv", "w") as f:
-        f.write(log_fraction_plot(ttfm_us))
-    with open(folder + "/masks_us.csv", "w") as f:
-        f.write(log_fraction_plot(all_masks_us))
+    if stats.num_masks_under_10ms:
+        stats.avg_masks_under_10ms = stats.masks_us_under_10ms // stats.num_masks_under_10ms
+    if stats.num_masks_over_10ms:
+        stats.avg_masks_over_10ms = stats.masks_us_over_10ms // stats.num_masks_over_10ms
+    if stats.num_tokens:
+        stats.avg_mask_us = stats.masks_us // stats.num_tokens
 
     with open(folder + "/log.txt", "r") as f:
         lines = f.readlines()
@@ -156,6 +152,14 @@ def main(folder: str):
             elif line == "Exit code: -14":
                 stats.num_timeouts += 1
 
+    print(json.dumps(stats.__dict__, indent=2))
+    with open(folder + "/stats.txt", "w") as f:
+        f.write(json.dumps(stats.__dict__, indent=2))
+    with open(folder + "/ttfm_us.csv", "w") as f:
+        f.write(log_fraction_plot(ttfm_us))
+    with open(folder + "/masks_us.csv", "w") as f:
+        f.write(log_fraction_plot(all_masks_us))
+
     ps = [25, 50, 75, 90, 95, 99, 99.9, 100]
 
     def get_p(arr: list[int], p: float):
@@ -166,14 +170,24 @@ def main(folder: str):
 
     entries = {}
     all_masks_us.sort()
-    entries["TBM avg"] = sum(all_masks_us) // len(all_masks_us)
-    for p in ps:
-        entries[f"TBM p{p}"] = get_p(all_masks_us, p)
+    if all_masks_us:
+        entries["TBM avg"] = sum(all_masks_us) // len(all_masks_us)
+        for p in ps:
+            entries[f"TBM p{p}"] = get_p(all_masks_us, p)
+    else:
+        entries["TBM avg"] = 0
+        for p in ps:
+            entries[f"TBM p{p}"] = 0
     ttfm_us += [900_000_000] * stats.num_timeouts
     ttfm_us.sort()
-    entries["TTFM avg"] = sum(ttfm_us) // len(ttfm_us)
-    for p in ps:
-        entries[f"TTFM p{p}"] = get_p(ttfm_us, p)
+    if ttfm_us:
+        entries["TTFM avg"] = sum(ttfm_us) // len(ttfm_us)
+        for p in ps:
+            entries[f"TTFM p{p}"] = get_p(ttfm_us, p)
+    else:
+        entries["TTFM avg"] = 0
+        for p in ps:
+            entries[f"TTFM p{p}"] = 0
     entries["tokens"] = stats.num_tokens
     entries["schemas"] = stats.num_schemas
     entries["passing"] = stats.num_schemas_ok
@@ -192,7 +206,7 @@ def main(folder: str):
     num_masks = sum(histogram_num)
     h_csv = "above us,frac\n"
     for i in range(10)[1:]:
-        frac = sum(histogram_num[i:]) * 100 / num_masks
+        frac = sum(histogram_num[i:]) * 100 / num_masks if num_masks else 0
         h_csv += f"{us_to_str(10**i):10}"
         h_csv += f","
         h_csv += f"{frac:1.15}"
@@ -260,6 +274,7 @@ plot_colors = {
     "llamacpp": 1,
     "xgr-cpp": 0,
     "outlines": 2,
+    "glrmask2": 3,
 }
 
 
@@ -374,7 +389,11 @@ if __name__ == "__main__":
         all_stats.append(stats)
 
     positions = list(plot_colors.keys())
-    ents.sort(key=lambda e: positions.index(e["meta"]["id"]))
+    ents.sort(
+        key=lambda e: positions.index(e["meta"]["id"])
+        if e["meta"]["id"] in positions
+        else len(positions)
+    )
 
     hd += [e["meta"]["name"] for e in ents]
     rows = [hd]
