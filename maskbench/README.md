@@ -44,7 +44,7 @@ By isolating mask computation, this benchmark assesses its standalone performanc
 3. **[XGrammar](https://github.com/mlc-ai/xgrammar)** in default configuration.
 4. **"XGrammar.cpp"**: XGrammar with the llama.cpp script above.
 5. **[Outlines Core](https://github.com/dottxt-ai/outlines-core)**
-6. **glrmask2**: local integration via the PyO3 `_glrmask` extension from a separate `glrmask2` checkout.
+6. **glrmask2**: local integration via the PyO3 `_glrmask` extension from a separate `glrmask2` checkout, with `glrmask2-mt` available as an opt-in multithreaded compile variant.
 
 ## Test Environment
 
@@ -55,6 +55,7 @@ By isolating mask computation, this benchmark assesses its standalone performanc
   - Threads: 40-thread limit.
 
 - Engines were executed single-threaded to emulate large batch scenarios (where batch size is larger than the number of available cores).
+- glrmask2's default JSB run is forced single-threaded; `--glrmask2-mt` records the multithreaded compile variant separately.
 - XGrammar was set to only use a single thread per sequence, other always do that.
 - ~~Outlines normally uses several threads per sequence, so it was run with 90 parallel threads, so it doesn't get more CPU time than the other engines.~~
 
@@ -171,6 +172,10 @@ Note that an engine that only supports "easy" schemas may have artificially good
   Then run:
 
   `./scripts/run_maskbench.py --glrmask2 data/`
+
+  To run glrmask2 as a separate multithreaded compile variant:
+
+  `./scripts/run_maskbench.py --glrmask2-mt --glrmask2-compile-threads 4 data/`
   
 - **Analyze Results**: Generate tables and plots with  
   `./scripts/maskbench_results.py`.

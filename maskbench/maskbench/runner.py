@@ -143,6 +143,16 @@ def setup_argparse():
         formatter_class=CustomHelpFormatter,
     )
     parser.add_argument("--glrmask2", action="store_true", help="Enable glrmask2")
+    parser.add_argument(
+        "--glrmask2-mt",
+        action="store_true",
+        help="Enable glrmask2 with internal compile multithreading",
+    )
+    parser.add_argument(
+        "--glrmask2-compile-threads",
+        type=int,
+        help="Number of glrmask2 internal compile threads for --glrmask2-mt",
+    )
     parser.add_argument("--xgr", action="store_true", help="Enable XGrammar")
     parser.add_argument(
         "--xgr-cpp",
@@ -195,11 +205,24 @@ def setup_argparse():
 def get_engine(args) -> Engine:
     engine: Engine | None = None
 
-    if args.glrmask2:
+    if args.glrmask2 or args.glrmask2_mt:
         from .glrmask2_engine import GlrMask2Engine
 
         assert not engine, "Multiple engines specified"
-        engine = GlrMask2Engine()
+        assert not (
+            args.glrmask2 and args.glrmask2_mt
+        ), "--glrmask2 and --glrmask2-mt are mutually exclusive"
+        if args.glrmask2_compile_threads is not None:
+            assert (
+                args.glrmask2_compile_threads > 0
+            ), "--glrmask2-compile-threads must be positive"
+            assert (
+                args.glrmask2_mt
+            ), "--glrmask2-compile-threads requires --glrmask2-mt"
+        engine = GlrMask2Engine(
+            multithreaded=args.glrmask2_mt,
+            compile_threads=args.glrmask2_compile_threads,
+        )
 
     if args.xgr or args.xgr_compliant or args.xgr_cpp:
         from .xgr_engine import XgrEngine

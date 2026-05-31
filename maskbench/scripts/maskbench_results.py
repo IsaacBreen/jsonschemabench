@@ -275,6 +275,7 @@ plot_colors = {
     "xgr-cpp": 0,
     "outlines": 2,
     "glrmask2": 3,
+    "glrmask2-mt": 4,
 }
 
 
