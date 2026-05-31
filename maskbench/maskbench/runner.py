@@ -164,6 +164,16 @@ def setup_argparse():
         action="store_true",
         help="Enable XGrammar in compliant (non-strict, any whitespace) mode",
     )
+    parser.add_argument(
+        "--xgr-mt",
+        action="store_true",
+        help="Enable XGrammar internal compile multithreading",
+    )
+    parser.add_argument(
+        "--xgr-compile-threads",
+        type=int,
+        help="Number of XGrammar internal compile threads for --xgr-mt",
+    )
     parser.add_argument("--llg", action="store_true", help="Enable LLGuidance")
     parser.add_argument("--outlines", action="store_true", help="Enable Outlines")
     parser.add_argument(
@@ -224,13 +234,21 @@ def get_engine(args) -> Engine:
             compile_threads=args.glrmask2_compile_threads,
         )
 
-    if args.xgr or args.xgr_compliant or args.xgr_cpp:
+    if args.xgr or args.xgr_compliant or args.xgr_cpp or args.xgr_mt:
         from .xgr_engine import XgrEngine
 
         assert not engine, "Multiple engines specified"
+        if args.xgr_compile_threads is not None:
+            assert (
+                args.xgr_compile_threads > 0
+            ), "--xgr-compile-threads must be positive"
+            assert args.xgr_mt, "--xgr-compile-threads requires --xgr-mt"
         engine = XgrEngine()
         engine.compliant = args.xgr_compliant
         engine.llama_cpp = args.xgr_cpp
+        engine.multithreaded = args.xgr_mt
+        if args.xgr_mt:
+            engine.compile_threads = args.xgr_compile_threads or args.num_threads
 
     if args.llg:
         from .llg_engine import LlgEngine

@@ -9,21 +9,28 @@ class XgrEngine(Engine):
         super().__init__()
         self.compliant = False
         self.llama_cpp = False
+        self.multithreaded = False
+        self.compile_threads = 1
 
     def get_id(self):
         if self.llama_cpp:
-            return "xgr-cpp"
+            base = "xgr-cpp"
         elif self.compliant:
-            return "xgr-compliant"
+            base = "xgr-compliant"
         else:
-            return "xgr"
+            base = "xgr"
+        return f"{base}-mt" if self.multithreaded else base
 
     def get_name(self):
         if self.llama_cpp:
-            return "XGrammar.cpp"
-        if self.compliant:
-            return "XGrammar (compliant)"
-        return "XGrammar"
+            base = "XGrammar.cpp"
+        elif self.compliant:
+            base = "XGrammar (compliant)"
+        else:
+            base = "XGrammar"
+        if not self.multithreaded:
+            return base
+        return f"{base} mt-{self.compile_threads}"
 
     def get_module(self):
         return "xgrammar"
@@ -36,7 +43,9 @@ class XgrEngine(Engine):
             self.tokenizer, vocab_size=full_vocab_size
         )
         self.token_bitmask = xgr.allocate_token_bitmask(1, tokenizer_info.vocab_size)
-        self.xgr_compiler = xgr.GrammarCompiler(tokenizer_info, max_threads=1)
+        self.xgr_compiler = xgr.GrammarCompiler(
+            tokenizer_info, max_threads=self.compile_threads
+        )
 
     def compile_grammar(self, schema: dict):
         if self.compliant:
